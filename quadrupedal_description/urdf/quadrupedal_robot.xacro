@@ -93,6 +93,41 @@
 	<xacro:joint_macro name="upper_joint4" x="0" y="-0.00425" z="-0.130" parent="upper_link4" child="under_link4"/>
 	<xacro:trans_macro name="upper_joint_trans4" joint_name="upper_joint4" act_name="upper_motor4"/>
 	<xacro:link_macro name="under_link4" ixx="0.000400596397" ixy="-0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="-0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_left_ease_alt.stl" color="Blue"/>
+
+	<!--IMU-->
+	<joint name="imu_joint" type="fixed">
+		<parent link="body"/>
+		<child link="imu_link"/>
+		<origin xyz="0.15 0 0.6" rpy="0 0 0"/>
+	</joint>
+	<link name="imu_link"/>
+		<!--visual>
+			<geometry>
+				<box size="0.01 0.01 0.01"/>
+			</geometry>
+		</visual>
+	</link-->
+	<gazebo reference="imu_link">
+		<gravity>true</gravity>
+		<sensor name="imu_sensor" type="imu">
+			<always_on>true</always_on>
+			<update_rate>100</update_rate>
+			<visualize>true</visualize>
+			<topic>data</topic>
+			<plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+				<topicName>imu</topicName>
+				<bodyName>imu_link</bodyName>
+        <updateRateHZ>10.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>imu_link</frameName>
+			</plugin>
+			<pose>0 0 0 0 0 0</pose>
+		</sensor>
+	</gazebo>
+
+
       
 	<gazebo>
 		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
