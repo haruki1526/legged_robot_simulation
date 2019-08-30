@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<robot name="quadrupedal_robot" xmlns:xacro="https://ros.org/wiki/xacro">
+
+	<xacro:macro name="link_macro" params="name ixx ixy ixz iyy iyz izz mass filename color">
+		<link name="${name}">
+			<inertial>
+				<mass value="${mass}"/>
+				<inertia ixx="${ixx}" ixy="${ixy}"  ixz="${ixz}" iyy="${iyy}" iyz="${iyz}" izz="${izz}"/>
+			</inertial>
+			<visual>
+				<geometry>
+					<mesh filename="${filename}"/>
+				</geometry>
+			</visual>
+			<collision>
+				<geometry>
+					<mesh filename="${filename}"/>
+				</geometry>
+			</collision>
+		</link>
+		<gazebo reference="${name}">
+			<mu1 value="0.5"/>
+			<mu2 value="0.4"/>
+			<material>Gazebo/${color}</material>
+		</gazebo>
+	</xacro:macro>
+
+
+	<xacro:macro name="joint_macro" params="name x y z parent child">
+		<joint name="${name}" type="revolute">
+			<parent link="${parent}"/>
+			<child link="${child}"/>
+			<axis xyz="0 1 0"/>
+			<origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
+			<dynamics damping="0.05"/>
+			<limit lower="-1.57" upper="1.57" effort="6.0" velocity="6.0"/>
+		</joint>
+	</xacro:macro>
+
+
+	<xacro:macro name="trans_macro" params="name joint_name act_name">
+		<transmission name="${name}">
+			<type>transmission_interface/SimpleTransmission</type>
+			<joint name="${joint_name}">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+			</joint>
+			<actuator name="${act_name}">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+				<mechanismReduction>1</mechanismReduction>
+			</actuator>
+		</transmission>
+	</xacro:macro>
+
+
+	<link name="world"/>
+  <joint name="world_joint" type="floating">
+		<parent link="world"/>
+		<child link="body"/> 
+    <origin  rpy="0 0 0" xyz="0 0 0"/>
+	</joint>
+
+	<xacro:link_macro name="body" ixx="0.013997409758" ixy="0.0"  ixz="0.0" iyy="0.032039793016" iyz="0.0" izz="0.029239204023" mass="1.43533" filename="package://quadrupedal_description/meshes/stl/body_assem_alt.stl" color="Blue"/>
+
+
+  <xacro:joint_macro name="body_joint1" x="0.15" y="-0.107" z="0.06" parent="body" child="upper_link1"/>
+	<xacro:trans_macro name="body_joint_trans1" joint_name="body_joint1" act_name="body_motor1"/>
+	<xacro:link_macro name="upper_link1" ixx="0.0005696021" ixy="-0.000000000098" ixz="-0.000000000243" iyy="0.000513795097" iyz="0.000074601225" izz="0.000137674903" mass="0.307" filename="package://quadrupedal_description/meshes/stl/upper_leg_alt.stl" color="Red"/>
+	<xacro:joint_macro name="upper_joint1" x="0" y="0.00425" z="-0.130" parent="upper_link1" child="under_link1"/>
+	<xacro:trans_macro name="upper_joint_trans1" joint_name="upper_joint1" act_name="upper_motor1"/>
+	<xacro:link_macro name="under_link1" ixx="0.000400596397" ixy="0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_alt.stl" color="Blue"/>
+	
+
+
+  <xacro:joint_macro name="body_joint2" x="-0.15" y="-0.107" z="0.06" parent="body" child="upper_link2"/>
+	<xacro:trans_macro name="body_joint_trans2" joint_name="body_joint2" act_name="body_motor2"/>
+	<xacro:link_macro name="upper_link2" ixx="0.0005696021" ixy="-0.000000000098" ixz="-0.000000000243" iyy="0.000513795097" iyz="0.000074601225" izz="0.000137674903" mass="0.307" filename="package://quadrupedal_description/meshes/stl/upper_leg_alt.stl" color="Red"/>
+	<xacro:joint_macro name="upper_joint2" x="0" y="0.00425" z="-0.130" parent="upper_link2" child="under_link2"/>
+	<xacro:trans_macro name="upper_joint_trans2" joint_name="upper_joint2" act_name="upper_motor2"/>
+	<xacro:link_macro name="under_link2" ixx="0.000400596397" ixy="0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_alt.stl" color="Blue"/>
+      
+
+  <xacro:joint_macro name="body_joint3" x="-0.15" y="0.107" z="0.06" parent="body" child="upper_link3"/>
+	<xacro:trans_macro name="body_joint_trans3" joint_name="body_joint3" act_name="body_motor3"/>
+	<xacro:link_macro name="upper_link3" ixx="0.000569601994" ixy="0.0000000001" ixz="-0.000000000243" iyy="0.000513795026" iyz="-0.000074601184" izz="0.000137674854" mass="0.307" filename="package://quadrupedal_description/meshes/stl/upper_leg_left_ease_alt.stl" color="Red"/>
+	<xacro:joint_macro name="upper_joint3" x="0" y="-0.00425" z="-0.130" parent="upper_link3" child="under_link3"/>
+	<xacro:trans_macro name="upper_joint_trans3" joint_name="upper_joint3" act_name="upper_motor3"/>
+	<xacro:link_macro name="under_link3" ixx="0.000400596397" ixy="-0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="-0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_left_ease_alt.stl" color="Blue"/>
+
+
+  <xacro:joint_macro name="body_joint4" x="0.15" y="0.107" z="0.06" parent="body" child="upper_link4"/>
+	<xacro:trans_macro name="body_joint_trans4" joint_name="body_joint4" act_name="body_motor4"/>
+	<xacro:link_macro name="upper_link4" ixx="0.000569601994" ixy="0.0000000001" ixz="-0.000000000243" iyy="0.000513795026" iyz="-0.000074601184" izz="0.000137674854" mass="0.307" filename="package://quadrupedal_description/meshes/stl/upper_leg_left_ease_alt.stl" color="Red"/>
+	<xacro:joint_macro name="upper_joint4" x="0" y="-0.00425" z="-0.130" parent="upper_link4" child="under_link4"/>
+	<xacro:trans_macro name="upper_joint_trans4" joint_name="upper_joint4" act_name="upper_motor4"/>
+	<xacro:link_macro name="under_link4" ixx="0.000400596397" ixy="-0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="-0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_left_ease_alt.stl" color="Blue"/>
+      
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/quadrupedal_robot</robotNamespace>
+		</plugin>
+	</gazebo>
+</robot>
