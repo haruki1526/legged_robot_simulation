@@ -1,6 +1,5 @@
-<?xml version="1.0"?>
-<robot name="quadrupedal_robot" xmlns:xacro="https://ros.org/wiki/xacro">
-
+<?xml version="1.0"?> 
+<robot name="quadrupedal_robot" xmlns:xacro="https://ros.org/wiki/xacro"> 
 	<xacro:macro name="link_macro" params="name ixx ixy ixz iyy iyz izz mass filename color">
 		<link name="${name}">
 			<inertial>
@@ -98,15 +97,15 @@
 	<joint name="imu_joint" type="fixed">
 		<parent link="body"/>
 		<child link="imu_link"/>
-		<origin xyz="0.15 0 0.6" rpy="0 0 0"/>
+		<origin xyz="0.15 0 0.12" rpy="0 0 0"/>
 	</joint>
-	<link name="imu_link"/>
-		<!--visual>
+	<link name="imu_link">
+		<visual>
 			<geometry>
 				<box size="0.01 0.01 0.01"/>
 			</geometry>
 		</visual>
-	</link-->
+	</link>
 	<gazebo reference="imu_link">
 		<gravity>true</gravity>
 		<sensor name="imu_sensor" type="imu">
@@ -126,6 +125,63 @@
 			<pose>0 0 0 0 0 0</pose>
 		</sensor>
 	</gazebo>
+
+	<!--Depth camera (unable)-->
+	<joint name="depth_camera_joint" type="fixed">
+		<parent link="body"/>
+		<child link="depth_link"/>
+		<origin xyz="0.21 0 0.06" rpy="0 0 0"/>
+	</joint>
+	<link name="depth_link">
+		<visual>
+			<geometry>
+				<box size="0.01 0.02 0.01"/>
+			</geometry>
+		</visual>
+	</link>
+
+	<gazebo reference="depth_link">
+  <sensor name="depth_camera" type="depth">
+    <update_rate>20</update_rate>
+    <camera>
+      <horizontal_fov>1.047198</horizontal_fov>
+      <image>
+        <width>640</width>
+        <height>480</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip>
+        <near>0.05</near>
+        <far>3</far>
+      </clip>
+    </camera>
+    <plugin name="depth_camera_controller" filename="libgazebo_ros_openni_kinect.so">
+      <baseline>0.2</baseline>
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1.0</updateRate>
+      <cameraName>depth_camera_ir</cameraName>
+      <imageTopicName>/depth_camera/depth/image_raw</imageTopicName>
+      <cameraInfoTopicName>/depth_camera/depth/camera_info</cameraInfoTopicName>
+      <depthImageTopicName>/depth_camera/depth/image_raw</depthImageTopicName>
+      <depthImageInfoTopicName>/depth_camera/depth/camera_info</depthImageInfoTopicName>
+      <pointCloudTopicName>/depth_camera/depth/points</pointCloudTopicName>
+      <frameName>depth_camera</frameName>
+      <pointCloudCutoff>0.5</pointCloudCutoff>
+      <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
+      <distortionK1>0.00000001</distortionK1>
+      <distortionK2>0.00000001</distortionK2>
+      <distortionK3>0.00000001</distortionK3>
+      <distortionT1>0.00000001</distortionT1>
+      <distortionT2>0.00000001</distortionT2>
+      <CxPrime>0</CxPrime>
+      <Cx>0</Cx>
+      <Cy>0</Cy>
+      <focalLength>0</focalLength>
+      <hackBaseline>0</hackBaseline>
+    </plugin>
+  </sensor>
+</gazebo>
+	
 
 
       
