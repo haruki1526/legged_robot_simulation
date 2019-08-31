@@ -18,8 +18,8 @@
 			</collision>
 		</link>
 		<gazebo reference="${name}">
-			<mu1 value="0.5"/>
-			<mu2 value="0.4"/>
+			<mu1 value="0.8"/>
+			<mu2 value="0.8"/>
 			<material>Gazebo/${color}</material>
 		</gazebo>
 	</xacro:macro>
@@ -31,8 +31,8 @@
 			<child link="${child}"/>
 			<axis xyz="0 1 0"/>
 			<origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
-			<dynamics damping="0.05"/>
-			<limit lower="-1.57" upper="1.57" effort="6.0" velocity="6.0"/>
+			<dynamics damping="0.1"/>
+			<limit lower="-2.0" upper="2.0" effort="6.0" velocity="6.0"/>
 		</joint>
 	</xacro:macro>
 
