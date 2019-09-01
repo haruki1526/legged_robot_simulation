@@ -1,0 +1,30 @@
+quadruped:
+  # Publish all joint states
+  #joint_state_controller:
+  #  type: joint_state_controller/JointStateController
+  #  publish_rate: 60
+
+  # controllers
+  joint_trajectory_controller:
+    type: effort_controllers/JointTrajectoryController
+
+    joints:
+      - body_joint1
+      - body_joint2
+      - body_joint3
+      - body_joint4
+      - upper_joint1
+      - upper_joint2
+      - upper_joint3
+      - upper_joint4
+
+    gains:
+      body_joint1: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      body_joint2: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      body_joint3: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      body_joint4: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      upper_joint1: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      upper_joint2: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      upper_joint3: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      upper_joint4: {p: 14, d: 0.1, i: 0, i_clamp: 10}
+      

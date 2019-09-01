@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="model" default="$(find quadrupedal_description)/urdf/quadrupedal_robot.xacro"/>   
+  <arg name="model" default="$(find quadrupedal_description)/urdf/quadrupedal_robot.xacro"/> 
+  <arg name="rvizconfig" default="$(find quadruped)/rviz/urdf.rviz" />  
   <param name="robot_description" command="$(find xacro)/xacro $(arg model)"/>
 
 	<include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -8,27 +9,23 @@
 	</include>
 
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model quadrupedal_robot -z 1.0" />
-  
+
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" />
+
+
+	<rosparam file="$(find quadrupedal_control)/config/joint_trj_quadrupedal_control.yaml" command="load"/>
+
+  <node name="controller_spawner" pkg="controller_manager"
+        type="spawner" respawn="false"
+        output="screen" ns="/quadrupedal_robot"
+				args="joint_trajectory_controller"/>
+
   <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher"
     respawn="false" output="screen">
     <remap from="/joint_states" to="/quadrupedal_robot/joint_states" />
     <param name="publish_frequency" type="double" value="60.0" />
   </node>
-  
 
-	
 
-	<rosparam file="$(find quadrupedal_control)/config/quadrupedal_control.yaml" command="load"/>
-
-  <node name="controller_spawner" pkg="controller_manager"
-        type="spawner" respawn="false"
-        output="screen" ns="/quadrupedal_robot"
-				args="body_joint1_position_controller 
-				upper_joint1_position_controller
-				body_joint2_position_controller
-				upper_joint2_position_controller
-				body_joint3_position_controller
-				upper_joint3_position_controller
-				body_joint4_position_controller
-				upper_joint4_position_controller"/>
 </launch>
