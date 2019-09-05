@@ -133,7 +133,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(cpg_control src/cpg_control.cpp)
+#add_executable(cpg_control src/cpg_control.cpp)
+add_executable(ik_control src/ik_control.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -146,8 +147,10 @@ add_executable(cpg_control src/cpg_control.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(cpg_control ${catkin_LIBRARIES})
-add_dependencies(cpg_control ${catkin_LIBRARIES})
+#target_link_libraries(cpg_control ${catkin_LIBRARIES})
+#add_dependencies(cpg_control ${catkin_LIBRARIES})
+target_link_libraries(ik_control ${catkin_LIBRARIES})
+add_dependencies(ik_control ${catkin_LIBRARIES})
 
 #############
 ## Install ##
