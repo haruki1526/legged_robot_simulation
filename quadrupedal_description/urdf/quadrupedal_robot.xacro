@@ -56,7 +56,7 @@
 			<axis xyz="0 1 0"/>
 			<origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
 			<dynamics damping="0.1"/>
-			<limit lower="-2.0" upper="2.0" effort="6.0" velocity="6.0"/>
+			<limit lower="-2.5" upper="2.5" effort="8.0" velocity="6.0"/>
 		</joint>
 	</xacro:macro>
 
