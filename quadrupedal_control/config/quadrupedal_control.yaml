@@ -2,32 +2,32 @@ quadrupedal_robot:
   body_joint1_position_controller:
     type: effort_controllers/JointPositionController
     joint: body_joint1
-    pid: {p: 14.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   upper_joint1_position_controller:
     type: effort_controllers/JointPositionController
     joint: upper_joint1
-    pid: {p: 10.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   body_joint2_position_controller:
     type: effort_controllers/JointPositionController
     joint: body_joint2
-    pid: {p: 14.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   upper_joint2_position_controller:
     type: effort_controllers/JointPositionController
     joint: upper_joint2
-    pid: {p: 10.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   body_joint3_position_controller:
     type: effort_controllers/JointPositionController
     joint: body_joint3
-    pid: {p: 14.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   upper_joint3_position_controller:
     type: effort_controllers/JointPositionController
     joint: upper_joint3
-    pid: {p: 10.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   body_joint4_position_controller:
     type: effort_controllers/JointPositionController
     joint: body_joint4
-    pid: {p: 14.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
   upper_joint4_position_controller:
     type: effort_controllers/JointPositionController
     joint: upper_joint4
-    pid: {p: 10.0, i: 0.10, d: 0.00}
+    pid: {p: 11.0, i: 0.00, d: 0.03}
