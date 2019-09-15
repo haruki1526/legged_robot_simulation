@@ -111,7 +111,7 @@ class CPG{
 		double get_yf(){
 			return yf;
 		}
-		void feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg);
+		void feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg, double C_hip);
 		//double Feede_tsr();
 		//double Feedf_tsr();
 
@@ -137,6 +137,15 @@ class RoboControl{
 		double rb_state;
 		double lf_state;
 		double lb_state;
+		double A_knee;
+		double B_knee;
+		double C_knee;
+		double A_hip;
+		double B_hip;
+		double C_hip;
+		double f_C_hip;
+		double f_C_knee;
+		double kmy;
 
 		quaternion orientation;
 
@@ -160,6 +169,7 @@ class RoboControl{
 			n = nodeHandle;
 			theta_o = -0.87;
 			theta_stance = 0;
+			kmy = 0.1;
 
 			imusub = n.subscribe("/imu", 10, &RoboControl::imuSubCallback, this);
 			jointsub = n.subscribe("/quadrupedal_robot/joint_states", 10, &RoboControl::jointSubCallback, this);
@@ -194,6 +204,9 @@ class RoboControl{
 		leg get_lb(){
 			return lb_leg;
 		}
+		double get_C_hip(){
+			return C_hip;
+		}
 
 };
 
@@ -221,9 +234,9 @@ double CPG::cpg(double connect_num, double yw_con_e, double yw_con_f){
 
 }
 
-void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg){
+void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg, double C_hip){
 	theta_vsr = hip - 0;  //body_pitch_angle
-	Feede_tsr_vsr = ktsr * (theta_vsr - theta_o);
+	Feede_tsr_vsr = ktsr * (theta_vsr - C_hip *(-1)); //theta_o
 	Feedf_tsr_vsr = -Feede_tsr_vsr;
 
 	Feede_tlrr = d_leg * ktlrr * body_roll_angle;
@@ -259,15 +272,10 @@ void RoboControl::imuSubCallback(const sensor_msgs::Imu& imu){
 }
 
 void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
-	double A_knee;
-	double B_knee;
-	double C_knee;
-	double A_hip;
-	double B_hip;
-	double C_hip;
-	tie(A_hip, A_knee) = solver(-0.08, 0.21);
-	tie(B_hip, B_knee) = solver(0.07, 0.21);
-	tie(C_hip, C_knee) = solver(-0.01, 0.24);
+	tie(A_hip, A_knee) = solver(-0.08, 0.19);
+	tie(B_hip, B_knee) = solver(0.02, 0.18);
+	tie(C_hip, C_knee) = solver(-0.04, 0.24);
+	tie(f_C_hip, f_C_knee) = solver(-0.04, 0.225);
 	ROS_INFO("C_knee=%f", rf_state);
 	theta_o = C_hip;
 
@@ -279,7 +287,7 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		}
 	}else if(rf_state == 2){
 		rf_leg_com.hip.data = B_hip;
-		rf_leg_com.knee.data = B_knee;/////////////////////////////
+		rf_leg_com.knee.data = B_knee + kmy*y_rf;/////////////////////////////
 		if(y_rf <= 0){
 			rf_state=3;
 		}
@@ -288,8 +296,8 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		rf_leg_com.knee.data = A_knee; //0.8;
 		rf_state = 1;
 	}else if(y_rf <= 0){
-		rf_leg_com.hip.data = C_hip;//theta_o + theta_stance + 0; //pitch_angle;
-		rf_leg_com.knee.data = C_knee;
+		rf_leg_com.hip.data = f_C_hip;//theta_o + theta_stance + 0; //pitch_angle;
+		rf_leg_com.knee.data = f_C_knee;
 		rf_state = 3;
 	}
 
@@ -302,7 +310,7 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		}
 	}else if(rb_state == 2){
 		rb_leg_com.hip.data = B_hip;//-0.17;
-		rb_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
+		rb_leg_com.knee.data = B_knee+ kmy*y_rb; //1.0;/////////////////////////////
 		if(y_rb <= 0){
 			rb_state=3;
 		}
@@ -325,7 +333,7 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		}
 	}else if(lf_state == 2){
 		lf_leg_com.hip.data = B_hip; //-0.17;
-		lf_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
+		lf_leg_com.knee.data = B_knee+ kmy*y_lf; //1.0;/////////////////////////////
 		if(y_lf <= 0){
 			lf_state=3;
 		}
@@ -334,8 +342,8 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		lf_leg_com.knee.data = A_knee; //0.8;
 		lf_state = 1;
 	}else if(y_lf <= 0){
-		lf_leg_com.hip.data = C_hip; //theta_o + theta_stance + 0; //pitch_angle;
-		lf_leg_com.knee.data = C_knee; //0.61;
+		lf_leg_com.hip.data = f_C_hip; //theta_o + theta_stance + 0; //pitch_angle;
+		lf_leg_com.knee.data = f_C_knee; //0.61;
 		lf_state = 3;
 	}
 
@@ -349,7 +357,7 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		}
 	}else if(lb_state == 2){
 		lb_leg_com.hip.data = B_hip; //-0.17;
-		lb_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
+		lb_leg_com.knee.data = B_knee+ kmy*y_lb; //1.0;/////////////////////////////
 		if(y_lb <= 0){
 			lb_state=3;
 		}
@@ -404,7 +412,7 @@ int main(int argc, char **argv){
 	CPG unit_lf(1.0, 0.0);
 	CPG unit_lb(0.0, 1.0);
 	double y_rf, y_rb, y_lf, y_lb;
-	double w_lf_rf=-0.5, w_rf_lf=-0.5, w_rf_rb=-0.01, w_lb_rb=-0.5, w_rb_lb=-0.5, w_lf_lb=-0.01;
+	double w_lf_rf=-1.7, w_rf_lf=-1.7, w_rf_rb=-0.01, w_lb_rb=-1.7, w_rb_lb=-1.7, w_lf_lb=-0.01;
 	double in_rf_e=0, in_rf_f=0, in_rb_e=0, in_rb_f=0, in_lf_e=0, in_lf_f=0, in_lb_e=0, in_lb_f=0;
 
 	leg rf_leg;
@@ -432,10 +440,10 @@ int main(int argc, char **argv){
 		rb_leg = robo.get_rb();
 		lf_leg = robo.get_lf();
 		lb_leg = robo.get_lb();
-		unit_rf.feed(robo.get_pitch(), robo.get_roll(), rf_leg.hip, theta_o, 1);
-		unit_rb.feed(robo.get_pitch(), robo.get_roll(), rb_leg.hip, theta_o, 1);
-		unit_lf.feed(robo.get_pitch(), robo.get_roll(), lf_leg.hip, theta_o, -1);
-		unit_lb.feed(robo.get_pitch(), robo.get_roll(), lb_leg.hip, theta_o, -1);
+		unit_rf.feed(robo.get_pitch(), robo.get_roll(), rf_leg.hip, theta_o, 1, robo.get_C_hip());
+		unit_rb.feed(robo.get_pitch(), robo.get_roll(), rb_leg.hip, theta_o, 1, robo.get_C_hip());
+		unit_lf.feed(robo.get_pitch(), robo.get_roll(), lf_leg.hip, theta_o, -1, robo.get_C_hip());
+		unit_lb.feed(robo.get_pitch(), robo.get_roll(), lb_leg.hip, theta_o, -1, robo.get_C_hip());
 
 		
 		robo.command(y_rf, y_rb, y_lf, y_lb);
