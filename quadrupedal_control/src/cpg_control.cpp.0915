@@ -4,7 +4,6 @@
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/Imu.h>
 #include <algorithm>
-#include <std_msgs/Float64MultiArray.h>
 
 using namespace std;
 
@@ -396,9 +395,6 @@ int main(int argc, char **argv){
 	ros::init(argc, argv, "cpg_controller");
 
 	ros::NodeHandle n;
-  
-	ros::Publisher cpg_pub = n.advertise<std_msgs::Float64MultiArray>("/quadrupedal_robot/cpg_state", 100);
-  std_msgs::Float64MultiArray cpg_array;
 
 	ros::Rate loop_rate(1000);
 	/*Leg_control rf_leg("body_joint1", "upper_joint1", n);
@@ -453,14 +449,6 @@ int main(int argc, char **argv){
 		robo.command(y_rf, y_rb, y_lf, y_lb);
 
 		ROS_INFO("rf=%f, lb=%f, lf=%f, rb=%f", y_rf, y_lb, y_lf, y_rb);
-
-    cpg_array.data.resize(4);
-    cpg_array.data[0] = y_rf;
-    cpg_array.data[1] = y_rb;
-    cpg_array.data[2] = y_lf;
-    cpg_array.data[3] = y_lb;
-    cpg_pub.publish(cpg_array);
-
 		ros::spinOnce();
 
 		loop_rate.sleep();
