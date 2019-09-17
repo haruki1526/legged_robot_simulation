@@ -72,15 +72,18 @@ class CPG{
 		double Feede_tlrr;
 		double Feedf_tlrr;
 		vector<double> w;
+    ros::NodeHandle handle;
 
 		double dt;
 
 		double Feede;
 		double Feedf;
 		double in_sum;
+		ros::Subscriber uosub;
 
 	public:
-		CPG(double in_ue, double in_uf){
+		CPG(double in_ue, double in_uf, ros::NodeHandle n){
+      handle = n;
 
 
 			tau = 0.05;
@@ -104,6 +107,7 @@ class CPG{
 
 			Feede=0;
 			Feedf=0;
+			uosub = handle.subscribe("/uo_com", 10, &CPG::uoCallback, this);
 		}
 		double cpg(double connect_num, double yw_con_e, double yw_con_f);
 		double get_ye(){
@@ -115,6 +119,7 @@ class CPG{
 		void feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg, double C_hip);
 		//double Feede_tsr();
 		//double Feedf_tsr();
+    void uoCallback(const std_msgs::Float64& uo_msg);
 
 };
 
@@ -274,9 +279,8 @@ void RoboControl::imuSubCallback(const sensor_msgs::Imu& imu){
 
 void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 	tie(A_hip, A_knee) = solver(-0.08, 0.19);
-	tie(B_hip, B_knee) = solver(0.02, 0.18);
+	tie(B_hip, B_knee) = solver(0.00, 0.19);
 	tie(C_hip, C_knee) = solver(-0.04, 0.24);
-	tie(f_C_hip, f_C_knee) = solver(-0.04, 0.225);
 	ROS_INFO("C_knee=%f", rf_state);
 	theta_o = C_hip;
 
@@ -297,8 +301,8 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		rf_leg_com.knee.data = A_knee; //0.8;
 		rf_state = 1;
 	}else if(y_rf <= 0){
-		rf_leg_com.hip.data = f_C_hip;//theta_o + theta_stance + 0; //pitch_angle;
-		rf_leg_com.knee.data = f_C_knee;
+		rf_leg_com.hip.data = C_hip;//theta_o + theta_stance + 0; //pitch_angle;
+		rf_leg_com.knee.data = C_knee;
 		rf_state = 3;
 	}
 
@@ -343,8 +347,8 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 		lf_leg_com.knee.data = A_knee; //0.8;
 		lf_state = 1;
 	}else if(y_lf <= 0){
-		lf_leg_com.hip.data = f_C_hip; //theta_o + theta_stance + 0; //pitch_angle;
-		lf_leg_com.knee.data = f_C_knee; //0.61;
+		lf_leg_com.hip.data = C_hip; //theta_o + theta_stance + 0; //pitch_angle;
+		lf_leg_com.knee.data = C_knee; //0.61;
 		lf_state = 3;
 	}
 
@@ -392,6 +396,17 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 
 }
 
+///////////////////////////////////////dataとるため
+void CPG::uoCallback(const std_msgs::Float64& uo_msg){
+
+  uo = uo_msg.data;
+
+}
+
+
+/////////////////////////////
+
+
 int main(int argc, char **argv){
 	ros::init(argc, argv, "cpg_controller");
 
@@ -401,23 +416,21 @@ int main(int argc, char **argv){
   std_msgs::Float64MultiArray cpg_array;
 
 	ros::Rate loop_rate(1000);
-	/*Leg_control rf_leg("body_joint1", "upper_joint1", n);
-	Leg_control rb_leg("body_joint2", "upper_joint2", n);
-	Leg_control lf_leg("body_joint4", "upper_joint4", n);
-	Leg_control lb_leg("body_joint3", "upper_joint3", n);*/
 
 	RoboControl robo(n);
 	double theta_o=-0.87;
 
 	double pos_x=0;
 	double pos_z=0.23;
-	CPG unit_rf(1.0, 0.0); //ef
-	CPG unit_rb(0.0, 1.0);
-	CPG unit_lf(1.0, 0.0);
-	CPG unit_lb(0.0, 1.0);
+	CPG unit_rf(1.0, 0.0, n); //ef
+	CPG unit_rb(0.0, 1.0, n);
+	CPG unit_lf(1.0, 0.0, n);
+	CPG unit_lb(0.0, 1.0, n);
 	double y_rf, y_rb, y_lf, y_lb;
-	double w_lf_rf=-1.7, w_rf_lf=-1.7, w_rf_rb=-0.01, w_lb_rb=-1.7, w_rb_lb=-1.7, w_lf_lb=-0.01;
+	double w_lf_rf=-1.3, w_rf_lf=-1.3, w_rf_rb=-1.30, w_lb_rb=-1.3, w_rb_lb=-1.3, w_lf_lb=-1.30;
 	double in_rf_e=0, in_rf_f=0, in_rb_e=0, in_rb_f=0, in_lf_e=0, in_lf_f=0, in_lb_e=0, in_lb_f=0;
+
+  double w_rb_rf = -1.3, w_lb_lf = -1.3;
 
 	leg rf_leg;
 	leg rb_leg;
@@ -431,14 +444,24 @@ int main(int argc, char **argv){
 		y_lf = unit_lf.cpg(0, in_lf_e, in_lf_f);
 		y_lb = unit_lb.cpg(0, in_lb_e, in_lb_f);
 
-		in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb;
+		/*in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb; //network for tekken
 		in_rf_e = unit_lf.get_ye() * w_rf_lf + unit_rb.get_ye() * w_rf_rb;
 		in_rb_f = unit_lb.get_yf() * w_rb_lb;
 		in_rb_e = unit_lb.get_ye() * w_rb_lb;
 		in_lf_f = unit_rf.get_yf() * w_lf_rf + unit_lb.get_yf() * w_lf_lb;
 		in_lf_e = unit_rf.get_ye() * w_lf_rf + unit_lb.get_ye() * w_lf_lb;
 		in_lb_f = unit_rb.get_yf() * w_lb_rb;
-		in_lb_e = unit_rb.get_ye() * w_lb_rb;
+		in_lb_e = unit_rb.get_ye() * w_lb_rb;*/
+
+
+		in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb; //network for patrash
+		in_rf_e = unit_lf.get_ye() * w_rf_lf + unit_rb.get_ye() * w_rf_rb;
+		in_rb_f = unit_lb.get_yf() * w_rb_lb + unit_rf.get_yf() * w_rb_rf;//
+		in_rb_e = unit_lb.get_ye() * w_rb_lb + unit_rf.get_ye() * w_rb_rf;//
+		in_lf_f = unit_rf.get_yf() * w_lf_rf + unit_lb.get_yf() * w_lf_lb;
+		in_lf_e = unit_rf.get_ye() * w_lf_rf + unit_lb.get_ye() * w_lf_lb;
+		in_lb_f = unit_rb.get_yf() * w_lb_rb + unit_lf.get_yf() * w_lb_lf;//
+		in_lb_e = unit_rb.get_ye() * w_lb_rb + unit_lf.get_ye() * w_lb_lf;//
 
 		rf_leg = robo.get_rf();
 		rb_leg = robo.get_rb();
@@ -449,7 +472,6 @@ int main(int argc, char **argv){
 		unit_lf.feed(robo.get_pitch(), robo.get_roll(), lf_leg.hip, theta_o, -1, robo.get_C_hip());
 		unit_lb.feed(robo.get_pitch(), robo.get_roll(), lb_leg.hip, theta_o, -1, robo.get_C_hip());
 
-		
 		robo.command(y_rf, y_rb, y_lf, y_lb);
 
 		ROS_INFO("rf=%f, lb=%f, lf=%f, rb=%f", y_rf, y_lb, y_lf, y_rb);
