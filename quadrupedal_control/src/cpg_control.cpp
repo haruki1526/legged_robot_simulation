@@ -39,9 +39,7 @@ tuple<double, double> solver(double x, double z){
 	theta1 = -atan2(x,z) + acos((l2*l2-l1*l1-M*M)/(-2*M*l1));
 	theta2 = -M_PI + acos((M*M - l1*l1 - l2*l2)/(-2*l1*l2));
 
-
 	return forward_as_tuple(theta1, theta2);
-
 
 }
 
@@ -86,10 +84,10 @@ class CPG{
       handle = n;
 
 
-			tau = 0.05;
+			tau = 0.01;
 			tauv = 0.6;
-			beta = 3.0;
-			uo = 3.0;
+			beta = 4.0; //2
+			uo = 1.0;
 			ue = in_ue;
 			due = 0.0;
 			ye = 1.0;
@@ -103,7 +101,7 @@ class CPG{
 			dvf = 0;
 			dt = 0.001;
 			ktlrr = 3.3;
-			ktsr = 3.0;
+			ktsr = 2.0;
 
 			Feede=0;
 			Feedf=0;
@@ -198,21 +196,11 @@ class RoboControl{
 		double get_roll(){
 			return roll_angle;
 		}
-		leg get_rf(){
-			return rf_leg;
-		}
-		leg get_rb(){
-			return rb_leg;
-		}
-		leg get_lf(){
-			return lf_leg;
-		}
-		leg get_lb(){
-			return lb_leg;
-		}
-		double get_C_hip(){
-			return C_hip;
-		}
+		leg get_rf(){ return rf_leg; }
+		leg get_rb(){ return rb_leg; }
+		leg get_lf(){ return lf_leg; }
+		leg get_lb(){ return lb_leg; }
+		double get_C_hip(){ return C_hip; }
 
 };
 
@@ -250,6 +238,7 @@ void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, doub
 
 	Feede = Feede_tsr_vsr + 0; //Feede_tlrr;
 	Feedf = Feedf_tsr_vsr + 0; //Feedf_tlrr;
+	ROS_INFO("Feede_tsr_vsr=%f", Feede_tsr_vsr);
 
 }
 
@@ -262,7 +251,6 @@ void RoboControl::jointSubCallback(const sensor_msgs::JointState& joint_state_ms
 	rb_leg.knee = -joint_state_msg.position[5];
 	lb_leg.knee = -joint_state_msg.position[6];
 	lf_leg.knee = -joint_state_msg.position[7];
-	//ROS_INFO("lf_leg_knee=%f", lf_leg.knee);
 
 }
 
@@ -278,21 +266,23 @@ void RoboControl::imuSubCallback(const sensor_msgs::Imu& imu){
 }
 
 void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
-	tie(A_hip, A_knee) = solver(-0.08, 0.19);
-	tie(B_hip, B_knee) = solver(0.00, 0.19);
-	tie(C_hip, C_knee) = solver(-0.04, 0.24);
-	ROS_INFO("C_knee=%f", rf_state);
+	tie(A_hip, A_knee) = solver(-0.08, 0.23);
+	tie(B_hip, B_knee) = solver(-0.02, 0.23);
+	tie(C_hip, C_knee) = solver(-0.05, 0.25);
+	//ROS_INFO("C_knee=%f", rf_state);
+	//書き込むときは+ 読み込むときは-
 	theta_o = C_hip;
+	ROS_INFO("rf_leg.hip=%f, >=,  rf_leg_com.hip.data=%f, rf_state=%f", rf_leg.hip, rf_leg_com.hip.data, rf_state);
 
 	if(rf_state == 1){
-		if(rf_leg.hip > -rf_leg_com.hip.data){
+		if(rf_leg.hip <= -rf_leg_com.hip.data && rf_leg.knee <= -rf_leg_com.knee.data){
 			rf_state=2;
 		}else{
 			rf_state=1;
 		}
 	}else if(rf_state == 2){
 		rf_leg_com.hip.data = B_hip;
-		rf_leg_com.knee.data = B_knee + kmy*y_rf;/////////////////////////////
+		rf_leg_com.knee.data = B_knee;/////////////////////////////
 		if(y_rf <= 0){
 			rf_state=3;
 		}
@@ -308,14 +298,14 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 
 
 	if(rb_state == 1){
-		if(rb_leg.hip > -rb_leg_com.hip.data){
+		if(rb_leg.hip <= -rb_leg_com.hip.data && rb_leg.knee <= -rb_leg_com.knee.data){
 			rb_state=2;
 		}else{
 			rb_state=1;
 		}
 	}else if(rb_state == 2){
 		rb_leg_com.hip.data = B_hip;//-0.17;
-		rb_leg_com.knee.data = B_knee+ kmy*y_rb; //1.0;/////////////////////////////
+		rb_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
 		if(y_rb <= 0){
 			rb_state=3;
 		}
@@ -331,14 +321,14 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 
 
 	if(lf_state == 1){
-		if(lf_leg.hip > -lf_leg_com.hip.data){
+		if(lf_leg.hip <= -lf_leg_com.hip.data && lf_leg.knee <= -lf_leg_com.knee.data){
 			lf_state=2;
 		}else{
 			lf_state=1;
 		}
 	}else if(lf_state == 2){
 		lf_leg_com.hip.data = B_hip; //-0.17;
-		lf_leg_com.knee.data = B_knee+ kmy*y_lf; //1.0;/////////////////////////////
+		lf_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
 		if(y_lf <= 0){
 			lf_state=3;
 		}
@@ -355,14 +345,14 @@ void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
 
 
 	if(lb_state == 1){
-		if(lb_leg.hip > -lb_leg_com.hip.data){
+		if(lb_leg.hip <= -lb_leg_com.hip.data && lb_leg.knee <= -lb_leg_com.knee.data){
 			lb_state=2;
 		}else{
 			lb_state=1;
 		}
 	}else if(lb_state == 2){
 		lb_leg_com.hip.data = B_hip; //-0.17;
-		lb_leg_com.knee.data = B_knee+ kmy*y_lb; //1.0;/////////////////////////////
+		lb_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
 		if(y_lb <= 0){
 			lb_state=3;
 		}
@@ -427,10 +417,10 @@ int main(int argc, char **argv){
 	CPG unit_lf(1.0, 0.0, n);
 	CPG unit_lb(0.0, 1.0, n);
 	double y_rf, y_rb, y_lf, y_lb;
-	double w_lf_rf=-1.3, w_rf_lf=-1.3, w_rf_rb=-1.30, w_lb_rb=-1.3, w_rb_lb=-1.3, w_lf_lb=-1.30;
+	double w_lf_rf=-0.7, w_rf_lf=-0.7, w_rf_rb=-0.50, w_lb_rb=-0.7, w_rb_lb=-0.7, w_lf_lb=-0.50;
 	double in_rf_e=0, in_rf_f=0, in_rb_e=0, in_rb_f=0, in_lf_e=0, in_lf_f=0, in_lb_e=0, in_lb_f=0;
 
-  double w_rb_rf = -1.3, w_lb_lf = -1.3;
+  double w_rb_rf = 0.0, w_lb_lf = 0.0;
 
 	leg rf_leg;
 	leg rb_leg;
@@ -474,7 +464,7 @@ int main(int argc, char **argv){
 
 		robo.command(y_rf, y_rb, y_lf, y_lb);
 
-		ROS_INFO("rf=%f, lb=%f, lf=%f, rb=%f", y_rf, y_lb, y_lf, y_rb);
+		//ROS_INFO("rf=%f, lb=%f, lf=%f, rb=%f", y_rf, y_lb, y_lf, y_rb);
 
     cpg_array.data.resize(4);
     cpg_array.data[0] = y_rf;
