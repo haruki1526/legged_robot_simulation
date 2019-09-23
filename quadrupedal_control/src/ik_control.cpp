@@ -44,6 +44,8 @@ tuple<double, double> Leg_control::solver(double x, double z){
 	theta2.data = -M_PI + acos((M*M - l1*l1 - l2*l2)/(-2*l1*l2));
 
 
+
+
 	return forward_as_tuple(theta1.data, theta2.data);
 }
 
