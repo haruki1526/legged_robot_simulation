@@ -266,9 +266,9 @@ void RoboControl::imuSubCallback(const sensor_msgs::Imu& imu){
 }
 
 void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
-	tie(A_hip, A_knee) = solver(-0.08, 0.23);
-	tie(B_hip, B_knee) = solver(-0.02, 0.23);
-	tie(C_hip, C_knee) = solver(-0.05, 0.25);
+	tie(A_hip, A_knee) = solver(-0.03, 0.20);
+	tie(B_hip, B_knee) = solver(0.03, 0.20);
+	tie(C_hip, C_knee) = solver(0.00, 0.23);
 	//ROS_INFO("C_knee=%f", rf_state);
 	//書き込むときは+ 読み込むときは-
 	theta_o = C_hip;
@@ -417,7 +417,7 @@ int main(int argc, char **argv){
 	CPG unit_lf(1.0, 0.0, n);
 	CPG unit_lb(0.0, 1.0, n);
 	double y_rf, y_rb, y_lf, y_lb;
-	double w_lf_rf=-0.7, w_rf_lf=-0.7, w_rf_rb=-0.50, w_lb_rb=-0.7, w_rb_lb=-0.7, w_lf_lb=-0.50;
+	double w_lf_rf=-0.8, w_rf_lf=-0.7, w_rf_rb=-0.50, w_lb_rb=-0.8, w_rb_lb=-0.8, w_lf_lb=-0.50;
 	double in_rf_e=0, in_rf_f=0, in_rb_e=0, in_rb_f=0, in_lf_e=0, in_lf_f=0, in_lb_e=0, in_lb_f=0;
 
   double w_rb_rf = 0.0, w_lb_lf = 0.0;
