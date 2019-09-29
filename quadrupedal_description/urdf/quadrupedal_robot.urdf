@@ -27,6 +27,10 @@
     </collision>
   </link>
   <gazebo reference="body">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Blue</material>
   </gazebo>
   <joint name="body_joint1" type="revolute">
@@ -35,7 +39,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0.15 -0.107 0.06"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="body_joint_trans1">
     <type>transmission_interface/SimpleTransmission</type>
@@ -64,6 +68,10 @@
     </collision>
   </link>
   <gazebo reference="upper_link1">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Red</material>
   </gazebo>
   <joint name="upper_joint1" type="revolute">
@@ -72,7 +80,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0 0.00425 -0.13"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="upper_joint_trans1">
     <type>transmission_interface/SimpleTransmission</type>
@@ -101,6 +109,41 @@
     </collision>
   </link>
   <gazebo reference="under_link1">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
+    <material>Gazebo/Blue</material>
+  </gazebo>
+  <joint name="tip_joint1" type="fixed">
+    <parent link="under_link1"/>
+    <child link="tip_link1"/>
+    <axis xyz="0 1 0"/>
+    <origin rpy="0 0 0" xyz="0 0.0085 -0.13"/>
+    <dynamics damping="0.05"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
+  </joint>
+  <link name="tip_link1">
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="0.0003136" ixy="0.0" ixz="0.0" iyy="0.0003136" iyz="0.0" izz="0.0003136"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <sphere radius="0.028"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.028"/>
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="tip_link1">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Blue</material>
   </gazebo>
   <joint name="body_joint2" type="revolute">
@@ -109,7 +152,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="-0.15 -0.107 0.06"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="body_joint_trans2">
     <type>transmission_interface/SimpleTransmission</type>
@@ -138,6 +181,10 @@
     </collision>
   </link>
   <gazebo reference="upper_link2">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Red</material>
   </gazebo>
   <joint name="upper_joint2" type="revolute">
@@ -146,7 +193,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0 0.00425 -0.13"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="upper_joint_trans2">
     <type>transmission_interface/SimpleTransmission</type>
@@ -175,6 +222,10 @@
     </collision>
   </link>
   <gazebo reference="under_link2">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Blue</material>
   </gazebo>
   <joint name="body_joint3" type="revolute">
@@ -183,7 +234,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="-0.15 0.107 0.06"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="body_joint_trans3">
     <type>transmission_interface/SimpleTransmission</type>
@@ -212,6 +263,10 @@
     </collision>
   </link>
   <gazebo reference="upper_link3">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Red</material>
   </gazebo>
   <joint name="upper_joint3" type="revolute">
@@ -220,7 +275,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0 -0.00425 -0.13"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="upper_joint_trans3">
     <type>transmission_interface/SimpleTransmission</type>
@@ -249,6 +304,10 @@
     </collision>
   </link>
   <gazebo reference="under_link3">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Blue</material>
   </gazebo>
   <joint name="body_joint4" type="revolute">
@@ -257,7 +316,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0.15 0.107 0.06"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="body_joint_trans4">
     <type>transmission_interface/SimpleTransmission</type>
@@ -286,6 +345,10 @@
     </collision>
   </link>
   <gazebo reference="upper_link4">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Red</material>
   </gazebo>
   <joint name="upper_joint4" type="revolute">
@@ -294,7 +357,7 @@
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0 -0.00425 -0.13"/>
     <dynamics damping="0.05"/>
-    <limit effort="6.0" lower="-1.57" upper="1.57" velocity="6.0"/>
+    <limit effort="8.0" lower="-2.5" upper="2.5" velocity="6.0"/>
   </joint>
   <transmission name="upper_joint_trans4">
     <type>transmission_interface/SimpleTransmission</type>
@@ -323,11 +386,109 @@
     </collision>
   </link>
   <gazebo reference="under_link4">
+    <mu1 value="1000.0"/>
+    <mu2 value="2000.0"/>
+    <kp value="1000000"/>
+    <kd value="1.0"/>
     <material>Gazebo/Blue</material>
+  </gazebo>
+  <!--IMU-->
+  <joint name="imu_joint" type="fixed">
+    <parent link="body"/>
+    <child link="imu_link"/>
+    <origin rpy="0 0 0" xyz="0.15 0 0.12"/>
+  </joint>
+  <link name="imu_link">
+    <visual>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <gazebo reference="imu_link">
+    <gravity>true</gravity>
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>data</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>imu</topicName>
+        <bodyName>imu_link</bodyName>
+        <updateRateHZ>10.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>imu_link</frameName>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+  <!--Depth camera (unable)-->
+  <joint name="depth_camera_joint" type="fixed">
+    <parent link="body"/>
+    <child link="depth_link"/>
+    <origin rpy="0 0 0" xyz="0.21 0 0.06"/>
+  </joint>
+  <link name="depth_link">
+    <visual>
+      <geometry>
+        <box size="0.01 0.02 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+  <gazebo reference="depth_link">
+    <sensor name="depth_camera" type="depth">
+      <update_rate>20</update_rate>
+      <camera>
+        <horizontal_fov>1.047198</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>3</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_openni_kinect.so" name="depth_camera_controller">
+        <baseline>0.2</baseline>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1.0</updateRate>
+        <cameraName>depth_camera_ir</cameraName>
+        <imageTopicName>/depth_camera/depth/image_raw</imageTopicName>
+        <cameraInfoTopicName>/depth_camera/depth/camera_info</cameraInfoTopicName>
+        <depthImageTopicName>/depth_camera/depth/image_raw</depthImageTopicName>
+        <depthImageInfoTopicName>/depth_camera/depth/camera_info</depthImageInfoTopicName>
+        <pointCloudTopicName>/depth_camera/depth/points</pointCloudTopicName>
+        <frameName>depth_camera</frameName>
+        <pointCloudCutoff>0.5</pointCloudCutoff>
+        <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
+        <distortionK1>0.00000001</distortionK1>
+        <distortionK2>0.00000001</distortionK2>
+        <distortionK3>0.00000001</distortionK3>
+        <distortionT1>0.00000001</distortionT1>
+        <distortionT2>0.00000001</distortionT2>
+        <CxPrime>0</CxPrime>
+        <Cx>0</Cx>
+        <Cy>0</Cy>
+        <focalLength>0</focalLength>
+        <hackBaseline>0</hackBaseline>
+      </plugin>
+    </sensor>
   </gazebo>
   <gazebo>
     <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
       <robotNamespace>/quadrupedal_robot</robotNamespace>
+    </plugin>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_joint_state_publisher.so" name="joint_state_publisher">
+      <robotNamespace>/quadrupedal_robot</robotNamespace>
+      <jointName>body_joint1, body_joint2, body_joint3, body_joint4, upper_joint1, upper_joint2, upper_joint3, upper_joint4</jointName>
+      <updateRate>60.0</updateRate>
+      <alwaysOn>true</alwaysOn>
     </plugin>
   </gazebo>
 </robot>

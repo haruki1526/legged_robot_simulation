@@ -18,13 +18,15 @@
 			</collision>
 		</link>
 		<gazebo reference="${name}">
-			<mu1 value="2000.0"/>
-			<mu2 value="1000.0"/>
+			<mu1 value="1.0"/>
+			<mu2 value="2.0"/>
+			<kp value="1000000"/>
+			<kd value="1.0"/>
 			<material>Gazebo/${color}</material>
 		</gazebo>
 	</xacro:macro>
 
-	<xacro:macro name="tip_link_macro" params="name ixx ixy ixz iyy iyz izz mass filename color">
+	<xacro:macro name="tip_link_macro" params="name ixx ixy ixz iyy iyz izz mass color">
 		<link name="${name}">
 			<inertial>
 				<mass value="${mass}"/>
@@ -32,19 +34,19 @@
 			</inertial>
 			<visual>
 				<geometry>
-					<mesh filename="${filename}"/>
+					<sphere radius="0.022" />
 				</geometry>
 			</visual>
 			<collision>
 				<geometry>
-					<mesh filename="${filename}"/>
+					<sphere radius="0.022" />
 				</geometry>
 			</collision>
 		</link>
 		<gazebo reference="${name}">
-			<mu1 value="1000.0"/>
-			<mu2 value="2000.0"/>
-			<kp value="1000000"/>
+			<mu1 value="1.0"/>
+			<mu2 value="2.0"/>
+			<kp value="100000000"/>
 			<kd value="1.0"/>
 			<material>Gazebo/${color}</material>
 		</gazebo>
@@ -94,6 +96,8 @@
 	<xacro:trans_macro name="upper_joint_trans1" joint_name="upper_joint1" act_name="upper_motor1"/>
 	<xacro:link_macro name="under_link1" ixx="0.000400596397" ixy="0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_alt.stl" color="Blue"/>
 	
+	<xacro:joint_macro name="tip_joint1" x="0" y="0.0045" z="-0.130" parent="under_link1" child="tip_link1" type="fixed"/>
+	<xacro:tip_link_macro name="tip_link1" ixx="0.0003136" ixy="0.0" ixz="0.0" iyy="0.0003136" iyz="0.0" izz="0.0003136" mass="0.02" color="Blue"/>
 
 
   <xacro:joint_macro name="body_joint2" x="-0.15" y="-0.107" z="0.06" parent="body" child="upper_link2" type="revolute"/>
@@ -103,6 +107,9 @@
 	<xacro:trans_macro name="upper_joint_trans2" joint_name="upper_joint2" act_name="upper_motor2"/>
 	<xacro:link_macro name="under_link2" ixx="0.000400596397" ixy="0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_alt.stl" color="Blue"/>
       
+	<xacro:joint_macro name="tip_joint2" x="0" y="0.0045" z="-0.130" parent="under_link2" child="tip_link2" type="fixed"/>
+	<xacro:tip_link_macro name="tip_link2" ixx="0.000001936" ixy="0.0" ixz="0.0" iyy="0.000001936" iyz="0.0" izz="0.000001936" mass="0.02" color="Blue"/>
+
 
   <xacro:joint_macro name="body_joint3" x="-0.15" y="0.107" z="0.06" parent="body" child="upper_link3" type="revolute"/>
 	<xacro:trans_macro name="body_joint_trans3" joint_name="body_joint3" act_name="body_motor3"/>
@@ -111,6 +118,9 @@
 	<xacro:trans_macro name="upper_joint_trans3" joint_name="upper_joint3" act_name="upper_motor3"/>
 	<xacro:link_macro name="under_link3" ixx="0.000400596397" ixy="-0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="-0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_left_ease_alt.stl" color="Blue"/>
 
+	<xacro:joint_macro name="tip_joint3" x="0" y="-0.0045" z="-0.130" parent="under_link3" child="tip_link3" type="fixed"/>
+	<xacro:tip_link_macro name="tip_link3" ixx="0.000001936" ixy="0.0" ixz="0.0" iyy="0.000001936" iyz="0.0" izz="0.000001936" mass="0.02" color="Blue"/>
+
 
   <xacro:joint_macro name="body_joint4" x="0.15" y="0.107" z="0.06" parent="body" child="upper_link4" type="revolute"/>
 	<xacro:trans_macro name="body_joint_trans4" joint_name="body_joint4" act_name="body_motor4"/>
@@ -118,6 +128,11 @@
 	<xacro:joint_macro name="upper_joint4" x="0" y="-0.00425" z="-0.130" parent="upper_link4" child="under_link4" type="revolute"/>
 	<xacro:trans_macro name="upper_joint_trans4" joint_name="upper_joint4" act_name="upper_motor4"/>
 	<xacro:link_macro name="under_link4" ixx="0.000400596397" ixy="-0.000000183755" ixz="-0.000003142145" iyy="0.00040165997" iyz="-0.000020733392" izz="0.000006738557" mass="0.080527" filename="package://quadrupedal_description/meshes/stl/under_leg_left_ease_alt.stl" color="Blue"/>
+
+	<xacro:joint_macro name="tip_joint4" x="0" y="-0.0045" z="-0.130" parent="under_link4" child="tip_link4" type="fixed"/>
+	<xacro:tip_link_macro name="tip_link4" ixx="0.000001936" ixy="0.0" ixz="0.0" iyy="0.000001936" iyz="0.0" izz="0.000001936" mass="0.02" color="Blue"/>
+
+
 
 	<!--IMU-->
 	<joint name="imu_joint" type="fixed">
