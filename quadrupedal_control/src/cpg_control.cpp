@@ -6,25 +6,30 @@
 #include <algorithm>
 #include <std_msgs/Float64MultiArray.h>
 
+
+//中立地点を作る
+
 using namespace std;
 
 #define _USE_MATH_DEFINES
-
 
 const double l1 =0.13, l2=0.13;
 
 struct leg{
 	double knee;
 	double hip;
+	std_msgs::Float64 knee_com;
+	std_msgs::Float64 hip_com;
+	int state;
+	double A_hip;
+	double B_hip;
+	double C_hip;
+	double A_knee;
+	double B_knee;
+	double C_knee;
+	double theta_o_hip;
+	double theta_o_knee;
 };
-
-struct leg_com{
-
-	std_msgs::Float64 knee;
-	std_msgs::Float64 hip;
-
-};
-	
 
 struct quaternion{
 	double x;
@@ -33,7 +38,7 @@ struct quaternion{
 	double w;
 };
 
-tuple<double, double> solver(double x, double z){
+tuple<double, double> solver_f(double x, double z){
 	double theta1, theta2;
 	double M = sqrt(x*x + z*z);
 	theta1 = -atan2(x,z) + acos((l2*l2-l1*l1-M*M)/(-2*M*l1));
@@ -42,6 +47,18 @@ tuple<double, double> solver(double x, double z){
 	return forward_as_tuple(theta1, theta2);
 
 }
+
+tuple<double, double> solver_h(double x, double z){
+	x = -x;
+	double theta1, theta2;
+	double M = sqrt(x*x + z*z);
+	theta1 = -1*(-atan2(x,z) + acos((l2*l2-l1*l1-M*M)/(-2*M*l1)));
+	theta2 = -1*(-M_PI + acos((M*M - l1*l1 - l2*l2)/(-2*l1*l2)));
+
+	return forward_as_tuple(theta1, theta2);
+
+}
+
 
 class CPG{
 
@@ -84,7 +101,7 @@ class CPG{
       handle = n;
 
 
-			tau = 0.01;
+			tau = 0.02;
 			tauv = 0.6;
 			beta = 4.0; //2
 			uo = 1.0;
@@ -101,7 +118,7 @@ class CPG{
 			dvf = 0;
 			dt = 0.001;
 			ktlrr = 3.3;
-			ktsr = 2.0;
+			ktsr = -2.0; //脚角度フィードバックゲイン 負の結合なのでマイナス
 
 			Feede=0;
 			Feedf=0;
@@ -114,7 +131,7 @@ class CPG{
 		double get_yf(){
 			return yf;
 		}
-		void feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg, double C_hip);
+		void feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg);
 		//double Feede_tsr();
 		//double Feedf_tsr();
     void uoCallback(const std_msgs::Float64& uo_msg);
@@ -128,27 +145,8 @@ class RoboControl{
 		leg rb_leg;
 		leg lf_leg;
 		leg lb_leg;
-		leg_com rf_leg_com;
-		leg_com rb_leg_com;
-		leg_com lf_leg_com;
-		leg_com lb_leg_com;
 		double theta_o;
-		double theta_A;
-		double theta_B;
-		double theta_C;
 		double theta_stance;
-		double rf_state;
-		double rb_state;
-		double lf_state;
-		double lb_state;
-		double A_knee;
-		double B_knee;
-		double C_knee;
-		double A_hip;
-		double B_hip;
-		double C_hip;
-		double f_C_hip;
-		double f_C_knee;
 		double kmy;
 
 		quaternion orientation;
@@ -186,10 +184,29 @@ class RoboControl{
 			rb_knee_pub = n.advertise<std_msgs::Float64>("/quadrupedal_robot/upper_joint2_position_controller/command", 100);
 			lb_knee_pub = n.advertise<std_msgs::Float64>("/quadrupedal_robot/upper_joint3_position_controller/command", 100);
 			lf_knee_pub = n.advertise<std_msgs::Float64>("/quadrupedal_robot/upper_joint4_position_controller/command", 100);
+			
+			tie(rf_leg.A_hip, rf_leg.A_knee) = solver_f(-0.03, 0.20);
+			tie(rf_leg.B_hip, rf_leg.B_knee) = solver_f(0.03, 0.20);
+			tie(rf_leg.C_hip, rf_leg.C_knee) = solver_f(-0.02, 0.22);
+			tie(rb_leg.A_hip, rb_leg.A_knee) = solver_h(-0.03, 0.20);
+			tie(rb_leg.B_hip, rb_leg.B_knee) = solver_h(0.03, 0.20);
+			tie(rb_leg.C_hip, rb_leg.C_knee) = solver_h(-0.02, 0.22);
+			tie(lf_leg.A_hip, lf_leg.A_knee) = solver_f(-0.03, 0.20);
+			tie(lf_leg.B_hip, lf_leg.B_knee) = solver_f(0.03, 0.20);
+			tie(lf_leg.C_hip, lf_leg.C_knee) = solver_f(-0.02, 0.22);
+			tie(lb_leg.A_hip, lb_leg.A_knee) = solver_h(-0.03, 0.20);
+			tie(lb_leg.B_hip, lb_leg.B_knee) = solver_h(0.03, 0.20);
+			tie(lb_leg.C_hip, lb_leg.C_knee) = solver_h(-0.02, 0.22);
+
+			tie(rf_leg.theta_o_hip, rf_leg.theta_o_knee) = solver_f(0.00, 0.22);
+			tie(rb_leg.theta_o_hip, rb_leg.theta_o_knee) = solver_h(0.00, 0.22);
+			tie(lf_leg.theta_o_hip, lf_leg.theta_o_knee) = solver_f(0.00, 0.22);
+			tie(lb_leg.theta_o_hip, lb_leg.theta_o_knee) = solver_h(0.00, 0.22);
 		}
 		void imuSubCallback(const sensor_msgs::Imu& imu_msg);
 		void jointSubCallback(const sensor_msgs::JointState& joint_state_msg);
 		void command(double y_rf, double y_rb, double y_lf, double y_lb);
+		void phase_determine(double y, leg& target_leg);
 		double get_pitch(){
 			return pitch_angle;
 		}
@@ -200,7 +217,6 @@ class RoboControl{
 		leg get_rb(){ return rb_leg; }
 		leg get_lf(){ return lf_leg; }
 		leg get_lb(){ return lb_leg; }
-		double get_C_hip(){ return C_hip; }
 
 };
 
@@ -228,9 +244,10 @@ double CPG::cpg(double connect_num, double yw_con_e, double yw_con_f){
 
 }
 
-void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg, double C_hip){
+void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg){
 	theta_vsr = hip - 0;  //body_pitch_angle
-	Feede_tsr_vsr = ktsr * (theta_vsr - C_hip *(-1)); //theta_o
+	Feede_tsr_vsr = 0*ktsr * (theta_vsr - theta_o); //theta_o
+	//ROS_INFO("feede=%f", Feede_tsr_vsr);
 	Feedf_tsr_vsr = -Feede_tsr_vsr;
 
 	Feede_tlrr = d_leg * ktlrr * body_roll_angle;
@@ -238,19 +255,18 @@ void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, doub
 
 	Feede = Feede_tsr_vsr + 0; //Feede_tlrr;
 	Feedf = Feedf_tsr_vsr + 0; //Feedf_tlrr;
-	ROS_INFO("Feede_tsr_vsr=%f", Feede_tsr_vsr);
 
 }
 
 void RoboControl::jointSubCallback(const sensor_msgs::JointState& joint_state_msg){
-	rf_leg.hip = -joint_state_msg.position[0];
-	rb_leg.hip = -joint_state_msg.position[1];
-	lb_leg.hip = -joint_state_msg.position[2];
-	lf_leg.hip = -joint_state_msg.position[3];
-	rf_leg.knee = -joint_state_msg.position[4];
-	rb_leg.knee = -joint_state_msg.position[5];
-	lb_leg.knee = -joint_state_msg.position[6];
-	lf_leg.knee = -joint_state_msg.position[7];
+	rf_leg.hip = joint_state_msg.position[0];
+	rb_leg.hip = joint_state_msg.position[1];
+	lb_leg.hip = joint_state_msg.position[2];
+	lf_leg.hip = joint_state_msg.position[3];
+	rf_leg.knee = joint_state_msg.position[4];
+	rb_leg.knee = joint_state_msg.position[5];
+	lb_leg.knee = joint_state_msg.position[6];
+	lf_leg.knee = joint_state_msg.position[7];
 
 }
 
@@ -265,124 +281,48 @@ void RoboControl::imuSubCallback(const sensor_msgs::Imu& imu){
 	//ROS_INFO("pitch=%f", pitch_angle);
 }
 
+void RoboControl::phase_determine(double y, leg& target_leg){
+
+
+	if(y <= 0){	
+		target_leg.hip_com.data = target_leg.C_hip;
+		target_leg.knee_com.data = target_leg.C_knee;
+		target_leg.state = 3;
+
+	}else if(target_leg.state == 1 && target_leg.A_hip <=  target_leg.hip && target_leg.A_knee <=  target_leg.knee){
+		target_leg.state = 2;
+	}else if(target_leg.state == 2){
+		target_leg.hip_com.data = target_leg.B_hip;
+		target_leg.knee_com.data = target_leg.B_knee;
+	}else if(y > 0){
+		target_leg.hip_com.data = target_leg.A_hip;
+		target_leg.knee_com.data = target_leg.A_knee;
+		target_leg.state = 1;
+
+	}
+
+
+}
+
 void RoboControl::command(double y_rf, double y_rb, double y_lf, double y_lb){
-	tie(A_hip, A_knee) = solver(-0.03, 0.20);
-	tie(B_hip, B_knee) = solver(0.03, 0.20);
-	tie(C_hip, C_knee) = solver(0.00, 0.23);
+
 	//ROS_INFO("C_knee=%f", rf_state);
 	//書き込むときは+ 読み込むときは-
-	theta_o = C_hip;
-	ROS_INFO("rf_leg.hip=%f, >=,  rf_leg_com.hip.data=%f, rf_state=%f", rf_leg.hip, rf_leg_com.hip.data, rf_state);
 
-	if(rf_state == 1){
-		if(rf_leg.hip <= -rf_leg_com.hip.data && rf_leg.knee <= -rf_leg_com.knee.data){
-			rf_state=2;
-		}else{
-			rf_state=1;
-		}
-	}else if(rf_state == 2){
-		rf_leg_com.hip.data = B_hip;
-		rf_leg_com.knee.data = B_knee;/////////////////////////////
-		if(y_rf <= 0){
-			rf_state=3;
-		}
-	}else if(y_rf > 0){
-		rf_leg_com.hip.data = A_hip; //1.2 * rf_leg.hip;
-		rf_leg_com.knee.data = A_knee; //0.8;
-		rf_state = 1;
-	}else if(y_rf <= 0){
-		rf_leg_com.hip.data = C_hip;//theta_o + theta_stance + 0; //pitch_angle;
-		rf_leg_com.knee.data = C_knee;
-		rf_state = 3;
-	}
+	//ROS_INFO("y_rf=%f", y_rf);
+	phase_determine(y_rf, rf_leg);
+	phase_determine(y_rb, rb_leg);
+	phase_determine(y_lf, lf_leg);
+	phase_determine(y_lb, lb_leg);
 
-
-	if(rb_state == 1){
-		if(rb_leg.hip <= -rb_leg_com.hip.data && rb_leg.knee <= -rb_leg_com.knee.data){
-			rb_state=2;
-		}else{
-			rb_state=1;
-		}
-	}else if(rb_state == 2){
-		rb_leg_com.hip.data = B_hip;//-0.17;
-		rb_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
-		if(y_rb <= 0){
-			rb_state=3;
-		}
-	}else if(y_rb > 0){
-		rb_leg_com.hip.data = A_hip; //1.2 * rb_leg.hip;
-		rb_leg_com.knee.data = A_knee; //0.8;
-		rb_state = 1;
-	}else if(y_rb <= 0){
-		rb_leg_com.hip.data = C_hip; //theta_o + theta_stance + 0; //pitch_angle;
-		rb_leg_com.knee.data = C_knee; //0.61;
-		rb_state = 3;
-	}
-
-
-	if(lf_state == 1){
-		if(lf_leg.hip <= -lf_leg_com.hip.data && lf_leg.knee <= -lf_leg_com.knee.data){
-			lf_state=2;
-		}else{
-			lf_state=1;
-		}
-	}else if(lf_state == 2){
-		lf_leg_com.hip.data = B_hip; //-0.17;
-		lf_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
-		if(y_lf <= 0){
-			lf_state=3;
-		}
-	}else if(y_lf > 0){
-		lf_leg_com.hip.data = A_hip; //1.2 * lf_leg.hip;
-		lf_leg_com.knee.data = A_knee; //0.8;
-		lf_state = 1;
-	}else if(y_lf <= 0){
-		lf_leg_com.hip.data = C_hip; //theta_o + theta_stance + 0; //pitch_angle;
-		lf_leg_com.knee.data = C_knee; //0.61;
-		lf_state = 3;
-	}
-
-
-
-	if(lb_state == 1){
-		if(lb_leg.hip <= -lb_leg_com.hip.data && lb_leg.knee <= -lb_leg_com.knee.data){
-			lb_state=2;
-		}else{
-			lb_state=1;
-		}
-	}else if(lb_state == 2){
-		lb_leg_com.hip.data = B_hip; //-0.17;
-		lb_leg_com.knee.data = B_knee; //1.0;/////////////////////////////
-		if(y_lb <= 0){
-			lb_state=3;
-		}
-	}else if(y_lb > 0){
-		lb_leg_com.hip.data = A_hip; //1.2 * lb_leg.hip;
-		lb_leg_com.knee.data = A_knee; //0.8;
-		lb_state = 1;
-	}else if(y_lb <= 0){
-		lb_leg_com.hip.data = C_hip; //theta_o + theta_stance + 0; //pitch_angle;
-		lb_leg_com.knee.data = C_knee; //0.61;
-		lb_state = 3;
-	}
-	
-	/*rf_leg_com.hip.data = -rf_leg_com.hip.data;
-	rb_leg_com.hip.data = -rb_leg_com.hip.data;
-	lf_leg_com.hip.data = -lf_leg_com.hip.data;
-	lb_leg_com.hip.data = -lb_leg_com.hip.data;
-	rf_leg_com.knee.data = -rf_leg_com.knee.data;
-	rb_leg_com.knee.data = -rb_leg_com.knee.data;
-	lf_leg_com.knee.data = -lf_leg_com.knee.data;
-	lb_leg_com.knee.data = -lb_leg_com.knee.data;*/
-
-	rf_hip_pub.publish(rf_leg_com.hip);
-	rf_knee_pub.publish(rf_leg_com.knee);
-	rb_hip_pub.publish(rb_leg_com.hip);
-	rb_knee_pub.publish(rb_leg_com.knee);
-	lf_hip_pub.publish(lf_leg_com.hip);
-	lf_knee_pub.publish(lf_leg_com.knee);
-	lb_hip_pub.publish(lb_leg_com.hip);
-	lb_knee_pub.publish(lb_leg_com.knee);
+	rf_hip_pub.publish(rf_leg.hip_com);
+	rf_knee_pub.publish(rf_leg.knee_com);
+	rb_hip_pub.publish(rb_leg.hip_com);
+	rb_knee_pub.publish(rb_leg.knee_com);
+	lf_hip_pub.publish(lf_leg.hip_com);
+	lf_knee_pub.publish(lf_leg.knee_com);
+	lb_hip_pub.publish(lb_leg.hip_com);
+	lb_knee_pub.publish(lb_leg.knee_com);
 
 }
 
@@ -392,8 +332,6 @@ void CPG::uoCallback(const std_msgs::Float64& uo_msg){
   uo = uo_msg.data;
 
 }
-
-
 /////////////////////////////
 
 
@@ -408,7 +346,6 @@ int main(int argc, char **argv){
 	ros::Rate loop_rate(1000);
 
 	RoboControl robo(n);
-	double theta_o=-0.87;
 
 	double pos_x=0;
 	double pos_z=0.23;
@@ -417,10 +354,10 @@ int main(int argc, char **argv){
 	CPG unit_lf(1.0, 0.0, n);
 	CPG unit_lb(0.0, 1.0, n);
 	double y_rf, y_rb, y_lf, y_lb;
-	double w_lf_rf=-0.8, w_rf_lf=-0.7, w_rf_rb=-0.50, w_lb_rb=-0.8, w_rb_lb=-0.8, w_lf_lb=-0.50;
+	double w_lf_rf=-0.9, w_rf_lf=-0.9, w_rf_rb=-0.90, w_lb_rb=-0.9, w_rb_lb=-0.9, w_lf_lb=-0.90;
 	double in_rf_e=0, in_rf_f=0, in_rb_e=0, in_rb_f=0, in_lf_e=0, in_lf_f=0, in_lb_e=0, in_lb_f=0;
 
-  double w_rb_rf = 0.0, w_lb_lf = 0.0;
+  double w_rb_rf = -0.9, w_lb_lf = -0.9;
 
 	leg rf_leg;
 	leg rb_leg;
@@ -434,17 +371,8 @@ int main(int argc, char **argv){
 		y_lf = unit_lf.cpg(0, in_lf_e, in_lf_f);
 		y_lb = unit_lb.cpg(0, in_lb_e, in_lb_f);
 
-		/*in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb; //network for tekken
-		in_rf_e = unit_lf.get_ye() * w_rf_lf + unit_rb.get_ye() * w_rf_rb;
-		in_rb_f = unit_lb.get_yf() * w_rb_lb;
-		in_rb_e = unit_lb.get_ye() * w_rb_lb;
-		in_lf_f = unit_rf.get_yf() * w_lf_rf + unit_lb.get_yf() * w_lf_lb;
-		in_lf_e = unit_rf.get_ye() * w_lf_rf + unit_lb.get_ye() * w_lf_lb;
-		in_lb_f = unit_rb.get_yf() * w_lb_rb;
-		in_lb_e = unit_rb.get_ye() * w_lb_rb;*/
 
-
-		in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb; //network for patrash
+		in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb;
 		in_rf_e = unit_lf.get_ye() * w_rf_lf + unit_rb.get_ye() * w_rf_rb;
 		in_rb_f = unit_lb.get_yf() * w_rb_lb + unit_rf.get_yf() * w_rb_rf;//
 		in_rb_e = unit_lb.get_ye() * w_rb_lb + unit_rf.get_ye() * w_rb_rf;//
@@ -457,10 +385,10 @@ int main(int argc, char **argv){
 		rb_leg = robo.get_rb();
 		lf_leg = robo.get_lf();
 		lb_leg = robo.get_lb();
-		unit_rf.feed(robo.get_pitch(), robo.get_roll(), rf_leg.hip, theta_o, 1, robo.get_C_hip());
-		unit_rb.feed(robo.get_pitch(), robo.get_roll(), rb_leg.hip, theta_o, 1, robo.get_C_hip());
-		unit_lf.feed(robo.get_pitch(), robo.get_roll(), lf_leg.hip, theta_o, -1, robo.get_C_hip());
-		unit_lb.feed(robo.get_pitch(), robo.get_roll(), lb_leg.hip, theta_o, -1, robo.get_C_hip());
+		unit_rf.feed(robo.get_pitch(), robo.get_roll(), rf_leg.hip, rf_leg.theta_o_hip, 1);
+		unit_rb.feed(robo.get_pitch(), robo.get_roll(), rb_leg.hip, rb_leg.theta_o_hip, 1);
+		unit_lf.feed(robo.get_pitch(), robo.get_roll(), lf_leg.hip, lf_leg.theta_o_hip, -1);
+		unit_lb.feed(robo.get_pitch(), robo.get_roll(), lb_leg.hip, lb_leg.theta_o_hip, -1);
 
 		robo.command(y_rf, y_rb, y_lf, y_lb);
 
@@ -483,7 +411,3 @@ int main(int argc, char **argv){
 	return 0;
 }
 
-		/*in_rf_f = unit_lf.get_yf() * w_rf_lf;
-		in_rf_e = unit_lf.get_ye() * w_rf_lf;
-		in_lf_f = unit_rf.get_yf() * w_lf_rf;
-		in_lf_e = unit_rf.get_ye() * w_lf_rf;*/
