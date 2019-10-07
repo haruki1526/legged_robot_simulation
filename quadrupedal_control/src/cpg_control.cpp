@@ -101,9 +101,9 @@ class CPG{
       handle = n;
 
 
-			tau = 0.02;
+			tau = 0.03;
 			tauv = 0.6;
-			beta = 4.0; //2
+			beta = 3.0; //2
 			uo = 1.0;
 			ue = in_ue;
 			due = 0.0;
@@ -118,13 +118,13 @@ class CPG{
 			dvf = 0;
 			dt = 0.001;
 			ktlrr = 3.3;
-			ktsr = -2.0; //脚角度フィードバックゲイン 負の結合なのでマイナス
+			ktsr = -3.0; //脚角度フィードバックゲイン 負の結合なのでマイナス
 
 			Feede=0;
 			Feedf=0;
 			uosub = handle.subscribe("/uo_com", 10, &CPG::uoCallback, this);
 		}
-		double cpg(double connect_num, double yw_con_e, double yw_con_f);
+		double cpg(double yw_con_e, double yw_con_f);
 		double get_ye(){
 			return ye;
 		}
@@ -221,7 +221,7 @@ class RoboControl{
 };
 
 
-double CPG::cpg(double connect_num, double yw_con_e, double yw_con_f){
+double CPG::cpg(double yw_con_e, double yw_con_f){
 
 	dve = (-ve + ye)/tauv;
 	due = (-ue + wfe * yf - beta*ve + uo + Feede + yw_con_e)/tau;
@@ -246,7 +246,7 @@ double CPG::cpg(double connect_num, double yw_con_e, double yw_con_f){
 
 void CPG::feed(double body_pitch_angle, double body_roll_angle, double hip, double theta_o, int d_leg){
 	theta_vsr = hip - 0;  //body_pitch_angle
-	Feede_tsr_vsr = 0*ktsr * (theta_vsr - theta_o); //theta_o
+	Feede_tsr_vsr = ktsr * (theta_vsr - theta_o); //theta_o
 	//ROS_INFO("feede=%f", Feede_tsr_vsr);
 	Feedf_tsr_vsr = -Feede_tsr_vsr;
 
@@ -349,15 +349,15 @@ int main(int argc, char **argv){
 
 	double pos_x=0;
 	double pos_z=0.23;
-	CPG unit_rf(1.0, 0.0, n); //ef
-	CPG unit_rb(0.0, 1.0, n);
-	CPG unit_lf(1.0, 0.0, n);
-	CPG unit_lb(0.0, 1.0, n);
+	CPG unit_rf(0.1, -0.1, n); //ef
+	CPG unit_rb(-0.5, 0.5, n);
+	CPG unit_lf(-1.0, 0.3, n);
+	CPG unit_lb(0.2, -1.0, n);
 	double y_rf, y_rb, y_lf, y_lb;
-	double w_lf_rf=-0.9, w_rf_lf=-0.9, w_rf_rb=-0.90, w_lb_rb=-0.9, w_rb_lb=-0.9, w_lf_lb=-0.90;
+	double w_lf_rf=-2.0, w_rf_lf=-2.0, w_rf_rb=-0.57, w_lb_rb=-2.0, w_rb_lb=-2.0, w_lf_lb=-0.57;
 	double in_rf_e=0, in_rf_f=0, in_rb_e=0, in_rb_f=0, in_lf_e=0, in_lf_f=0, in_lb_e=0, in_lb_f=0;
 
-  double w_rb_rf = -0.9, w_lb_lf = -0.9;
+  double w_rb_rf = 0.0, w_lb_lf = 0.0;
 
 	leg rf_leg;
 	leg rb_leg;
@@ -366,10 +366,10 @@ int main(int argc, char **argv){
 
 	while(ros::ok()){
 
-		y_rf = unit_rf.cpg(0, in_rf_e, in_rf_f);
-		y_rb = unit_rb.cpg(0, in_rb_e, in_rb_f);
-		y_lf = unit_lf.cpg(0, in_lf_e, in_lf_f);
-		y_lb = unit_lb.cpg(0, in_lb_e, in_lb_f);
+		y_rf = unit_rf.cpg(in_rf_e, in_rf_f);
+		y_rb = unit_rb.cpg(in_rb_e, in_rb_f);
+		y_lf = unit_lf.cpg(in_lf_e, in_lf_f);
+		y_lb = unit_lb.cpg(in_lb_e, in_lb_f);
 
 
 		in_rf_f = unit_lf.get_yf() * w_rf_lf + unit_rb.get_yf() * w_rf_rb;
@@ -379,7 +379,16 @@ int main(int argc, char **argv){
 		in_lf_f = unit_rf.get_yf() * w_lf_rf + unit_lb.get_yf() * w_lf_lb;
 		in_lf_e = unit_rf.get_ye() * w_lf_rf + unit_lb.get_ye() * w_lf_lb;
 		in_lb_f = unit_rb.get_yf() * w_lb_rb + unit_lf.get_yf() * w_lb_lf;//
-		in_lb_e = unit_rb.get_ye() * w_lb_rb + unit_lf.get_ye() * w_lb_lf;//
+		in_lb_e = unit_rb.get_ye() * w_lb_rb + unit_lf.get_ye() * w_lb_lf;
+
+		/*in_rf_f = unit_lf.get_yf() * w_rf_lf;
+		in_rf_e = unit_lf.get_ye() * w_rf_lf;
+		in_rb_f = unit_lb.get_yf() * w_rb_lb;//
+		in_rb_e = unit_lb.get_ye() * w_rb_lb;//
+		in_lf_f = unit_rf.get_yf() * w_lf_rf;
+		in_lf_e = unit_rf.get_ye() * w_lf_rf;
+		in_lb_f = unit_rb.get_yf() * w_lb_rb;//
+		in_lb_e = unit_rb.get_ye() * w_lb_rb;*/
 
 		rf_leg = robo.get_rf();
 		rb_leg = robo.get_rb();
@@ -392,7 +401,7 @@ int main(int argc, char **argv){
 
 		robo.command(y_rf, y_rb, y_lf, y_lb);
 
-		//ROS_INFO("rf=%f, lb=%f, lf=%f, rb=%f", y_rf, y_lb, y_lf, y_rb);
+		ROS_INFO("rf=%f, lb=%f, lf=%f, rb=%f", y_rf, y_lb, y_lf, y_rb);
 
     cpg_array.data.resize(4);
     cpg_array.data[0] = y_rf;
